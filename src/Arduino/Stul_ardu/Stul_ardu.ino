@@ -49,7 +49,12 @@ void setup()
   Serial.begin(115200);
   //vystup=hall(7,5,3);
   //Serial.write(vystup);
-  
+  Serial.write(hall(7,7,3));
+
+  while(Serial.read()!=B11111111)
+  {
+    
+  }
   //hall_status();
   //Serial.println(hall_stat[0],BIN);
   
@@ -144,12 +149,59 @@ void loop()
         }
       }
       //update pouze pokud je pro definovaný počet desek
-      update_LED();
+      update_LED(0);
       
     }
     else
     {
-      //Serial.write(hall(3,3,3));
+      if(led_data[0]==7)
+      {
+        if(led_data[1]==0)
+        {
+          switch(led_data[2])
+          {
+            case 0:
+              Serial.write(hall(7,0,0));
+              for(int i=0;i<pocet_desek;i++)
+              {
+                led_G[i]=B00000000;
+                
+                led_R[i]=B00000000;
+                Serial.write(led_G[i]);
+              }
+            break;
+            case 1:
+              Serial.write(hall(7,0,1));
+              for(int i=0;i<pocet_desek;i++)
+              {
+                led_G[i]=255;
+                led_R[i]=0;
+                Serial.write(led_G[i]);
+              }
+            break;
+            case 2:
+              //Serial.write(hall(7,0,2));
+              for(int i=0;i<pocet_desek;i++)
+              {
+                led_R[i]=255;
+                led_G[i]=0;
+              }
+            break;
+            case 3:
+             //Serial.write(hall(7,0,3));
+              for(int i=0;i<pocet_desek;i++)
+              {
+                led_G[i]=255;
+                led_R[i]=255;
+              }
+            break;  
+          }
+          
+          update_LED(1);
+          
+        }
+      }
+      
     }
 
     
@@ -246,17 +298,30 @@ void led(byte b)
   led_data[2]=b&3;
 }
 
-void update_LED()
+void update_LED(boolean special)
 {
+  if(special)
+  {
+    Serial.write(hall(2,2,2));
+    for(int i=0;i<pocet_desek;i++)
+    {
+      mesh_top=((led_G[i]&B10101010)>>1)|((led_R[i]&B01010101))<<1;
+      mesh_bot=(led_G[i]&B01010101)|(led_R[i]&B10101010);
+    
+      led_mesh[2*i]=mesh_top;
+      led_mesh[2*i+1]=mesh_bot;
+    }
+  }
+  else
+  {
+    Serial.write(hall(1,1,1));
+    mesh_top=((led_G[led_data[0]]&B10101010)>>1)|((led_R[led_data[0]]&B01010101))<<1;
+    mesh_bot=(led_G[led_data[0]]&B01010101)|(led_R[led_data[0]]&B10101010);
   
-  mesh_top=((led_G[led_data[0]]&B10101010)>>1)|((led_R[led_data[0]]&B01010101))<<1;
+    led_mesh[2*led_data[0]]=mesh_top;
+    led_mesh[2*led_data[0]+1]=mesh_bot;
+  }
   
-  mesh_bot=(led_G[led_data[0]]&B01010101)|(led_R[led_data[0]]&B10101010);
-
-  
- 
-  led_mesh[2*led_data[0]]=mesh_top;
-  led_mesh[2*led_data[0]+1]=mesh_bot;
 
   //led(led_G[0]);
   //Serial.write(hall(led_data[0],led_data[1],led_data[2]));
@@ -270,20 +335,20 @@ void update_LED()
    //
    //Led oe - pin 8
    //Led le - pin 7
-  //PORTB |= B00000001;
-  digitalWrite(LED_OE,HIGH);
+  PORTB |= B00000001;
+  //digitalWrite(LED_OE,HIGH);
   
   for(int i=pocet_desek;i>=0;i--)
   {
     shiftout(LED_DATA,LED_CLK,led_mesh[2*i],led_mesh[2*i+1]);
   }
 
-  //PORTD |= B10000000;
-  digitalWrite(LED_LE,HIGH);
-  //PORTD &= !B10000000;
-  digitalWrite(LED_LE,LOW);
-  //PORTB &= !B00000001;
-  digitalWrite(LED_OE,LOW);
+  PORTD |= B10000000;
+  //digitalWrite(LED_LE,HIGH);
+  PORTD &= !B10000000;
+  //digitalWrite(LED_LE,LOW);
+  PORTB &= !B00000001;
+  //digitalWrite(LED_OE,LOW);
   
 }
 
@@ -295,38 +360,38 @@ void shiftout(int Output,int Clock,byte topB,byte botB)
     
     if((botB>>x)&1==1)
     {
-      //PORTD |= B01000000;
-      digitalWrite(Output,HIGH);
+      PORTD |= B01000000;
+      //digitalWrite(Output,HIGH);
     }
     else
     {
-      //PORTD &= !B01000000;
-      digitalWrite(Output,LOW);
+      PORTD &= !B01000000;
+      //digitalWrite(Output,LOW);
     }
     
-    //PORTB |= B00000010;
-    digitalWrite(Clock,HIGH);
-    //PORTB &= !B00000010;
-    digitalWrite(Clock,LOW);
+    PORTB |= B00000010;
+    //digitalWrite(Clock,HIGH);
+    PORTB &= !B00000010;
+    //digitalWrite(Clock,LOW);
   }
   //2. Byte
   for(int x=0;x<8;x++)
   {
     if((topB>>x)&1==1)
     {
-      //PORTD |= B01000000;
-      digitalWrite(Output,HIGH);
+      PORTD |= B01000000;
+      //digitalWrite(Output,HIGH);
     }
     else
     {
-      //PORTD &= !B01000000;
-      digitalWrite(Output,LOW);
+      PORTD &= !B01000000;
+      //digitalWrite(Output,LOW);
     }
     
-    //PORTB |= B00000010;
-    digitalWrite(Clock,HIGH);
-    //PORTB &= !B00000010;
-    digitalWrite(Clock,LOW);
+    PORTB |= B00000010;
+    //digitalWrite(Clock,HIGH);
+    PORTB &= !B00000010;
+    //digitalWrite(Clock,LOW);
   }
   
 }
