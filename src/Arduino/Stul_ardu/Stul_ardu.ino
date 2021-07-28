@@ -11,6 +11,10 @@ byte vystup;
 byte hall_stat[pocet_desek]={B10101000};
 byte prev_hall_stat[pocet_desek];
 
+byte hall_x;
+byte hall_y;
+byte hall_state;
+
 
 void setup()
 {
@@ -41,6 +45,28 @@ void loop()
   hall_status();
   for(int i=0;i<pocet_desek;i++)
   { 
+    //zjištování změn stavu hall sond na deskách (X souradnice pro odeslání)
+    if(hall_stat[i]!=prev_hall_stat[i])
+    {
+      hall_x=i;
+
+      if(hall_stat[i]>prev_hall_stat[i])
+      {
+        hall_state=1;
+      }
+      
+      //zjištování která sonda se zmenila na x-té desce (Y souradnice pro odeslání)
+      for(int y=0;y<8;y++)
+      {
+        if((hall_stat[i]>>(y+1))<1)
+        {
+          hall_y=y;
+          break;
+        }
+      }
+      Serial.write(hall(hall_x,hall_y,hall_state));
+      prev_hall_stat[i]=hall_stat[i];
+    }
     Serial.println(hall_stat[i],BIN);
   }
   Serial.println("========");
