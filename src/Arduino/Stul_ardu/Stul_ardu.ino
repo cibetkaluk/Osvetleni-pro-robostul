@@ -346,9 +346,9 @@ void update_LED(boolean special)
 
   PORTD |= B10000000;
   //digitalWrite(LED_LE,HIGH);
-  PORTD &= !B10000000;
+  PORTD &= ~B10000000;
   //digitalWrite(LED_LE,LOW);
-  PORTB &= !B00000001;
+  PORTB &= ~B00000001;
   //digitalWrite(LED_OE,LOW);
   
 }
@@ -366,15 +366,15 @@ void shiftout(int Output,int Clock,byte topB,byte botB)
     }
     else
     {
-      PORTD &= !B01000000;
+      PORTD &= ~B01000000;
       //digitalWrite(Output,LOW);
     }
     
     PORTB |= B00000010;
     //digitalWrite(Clock,HIGH);
-    PORTB &= !B00000010;
+    PORTB &= ~B00000010;
     //digitalWrite(Clock,LOW);
-    PORTB |= B00000001;
+    //PORTB |= B00000001;
   }
   //2. Byte
   for(int x=0;x<8;x++)
@@ -386,15 +386,15 @@ void shiftout(int Output,int Clock,byte topB,byte botB)
     }
     else
     {
-      PORTD &= !B01000000;
+      PORTD &= ~B01000000;
       //digitalWrite(Output,LOW);
     }
     
     PORTB |= B00000010;
     //digitalWrite(Clock,HIGH);
-    PORTB &= !B00000010;
+    PORTB &= ~B00000010;
     //digitalWrite(Clock,LOW);
-    PORTB |= B00000001;
+    //PORTB |= B00000001;
   }
   
 }
