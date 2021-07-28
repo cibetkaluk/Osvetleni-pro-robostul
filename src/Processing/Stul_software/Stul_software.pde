@@ -498,7 +498,11 @@ void mouseClicked()
             menu=true;
           break;
           case 8:
+            println("Score Reset");
+            println(BARVA_INIT);
             Allpixels(BARVA_INIT);
+            send=send_led(7,0,BARVA_INIT);
+            port.write(send);
           break;
             
         }
@@ -555,6 +559,8 @@ void mouseClicked()
           break;
           case 5:
             Allpixels(BARVA_INIT);
+            send=send_led(7,0,BARVA_INIT);
+            port.write(send);
           break;
         }
       }
