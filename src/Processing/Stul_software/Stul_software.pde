@@ -3,6 +3,7 @@ ArrayList<Pixel> Pix = new ArrayList<Pixel>();
 
 Pixel P;
 
+String [] Data;
 
 int size=100;
 
@@ -33,20 +34,36 @@ void setup()
   //vytvoření oběktu "port" pro komunikaci s rychlostí 115200 baudů
   port = new Serial(this,Serial.list()[0],115200);
   
+  Data=loadStrings("data/pozice.data");
+  
   //test seriové komunikace
   send=send_led(7,5,3);
   //port.write(send);
   println(binary(send));
   //vytvoření rozložení stolu
-  textAlign(CENTER,CENTER); 
-  for(int x=0;x<9;x++)
+  textAlign(CENTER,CENTER);
+  if(Data==null)
   {
-    for(int y=0;y<6;y++)
+    for(int x=0;x<9;x++)
     {
-      P = new Pixel(x*(size)+10,y*(size)+10,size,size,(x*6+y));
+      for(int y=0;y<6;y++)
+      {
+        P = new Pixel(x*(size)+10,y*(size)+10,size,size,(x*6+y));
+        Pix.add(P);
+      }
+    }
+  }
+  else
+  {
+    for(int i=0;i<Data.length;i++)
+    {
+      String s = Data[i];
+      String [] temp = split(s,';');
+      P = new Pixel(int(temp[0]),int(temp[1]),size,size,int(temp[2]));
       Pix.add(P);
     }
   }
+  
   
 }
 
@@ -119,7 +136,28 @@ void keyReleased()
   {
     send=send_led(0,6,3);
   }
+  if(key=='S')
+  {
+    saveStat();
+  }
   port.write(send);
+}
+
+void saveStat()
+{
+  Data = new String[0];
+  for(Pixel P : Pix)
+  {
+    int x=P.xpos;
+    int y=P.ypos;
+    int ind=P.ind;
+
+    String S =x+";"+y+";"+ind;
+    String temp[] = new String[1];
+    temp[0]=S;
+    Data=concat(Data,temp);
+  }
+  saveStrings("data/pozice.data",Data);
 }
 
 void mouseClicked()
