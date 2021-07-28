@@ -190,6 +190,8 @@ void setup()
   Butt.add(B);
   B = new Button(950,650,140,50,"MENU",#323232,7);
   Butt.add(B);
+  B = new Button(950,370,290,50,"SCORE RESET",#323232,8);
+  Butt.add(B);
   
   B = new Button(950,650,140,50,"MENU",#323232,0);
   Butt1.add(B);
@@ -249,9 +251,9 @@ void draw()
       text("Off:"+Off,710,650);
       
       //score text
-      text("score:",1100,400);
+      //text("score:",1100,400);
       textSize(200);
-      text(score,1100,500);
+      text(score,1100,510);
       
       Off=0;
       G=0;
@@ -495,6 +497,10 @@ void mouseClicked()
           case 7:
             menu=true;
           break;
+          case 8:
+            Allpixels(BARVA_INIT);
+          break;
+            
         }
       }
     }
