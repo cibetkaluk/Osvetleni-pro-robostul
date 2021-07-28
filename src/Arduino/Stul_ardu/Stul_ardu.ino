@@ -1,5 +1,5 @@
 
-#define pocet_desek 2
+#define pocet_desek 7
 
 #define HCLK 3
 #define HIN 5
@@ -161,22 +161,22 @@ void loop()
           switch(led_data[2])
           {
             case 0:
-              Serial.write(hall(7,0,0));
+              //Serial.write(hall(7,0,0));
               for(int i=0;i<pocet_desek;i++)
               {
                 led_G[i]=B00000000;
                 
                 led_R[i]=B00000000;
-                Serial.write(led_G[i]);
+                //Serial.write(led_G[i]);
               }
             break;
             case 1:
-              Serial.write(hall(7,0,1));
+              //Serial.write(hall(7,0,1));
               for(int i=0;i<pocet_desek;i++)
               {
                 led_G[i]=255;
                 led_R[i]=0;
-                Serial.write(led_G[i]);
+                //Serial.write(led_G[i]);
               }
             break;
             case 2:
@@ -219,6 +219,7 @@ void loop()
     //zjištování změn stavu hall sond na deskách (X souradnice pro odeslání)
     if(hall_stat[i]!=prev_hall_stat[i])
     {
+      //Serial.write(hall(1,1,3));
       hall_x=i;
 
       if(hall_stat[i]>prev_hall_stat[i])
@@ -302,7 +303,7 @@ void update_LED(boolean special)
 {
   if(special)
   {
-    Serial.write(hall(2,2,2));
+    //Serial.write(hall(2,2,2));
     for(int i=0;i<pocet_desek;i++)
     {
       mesh_top=((led_G[i]&B10101010)>>1)|((led_R[i]&B01010101))<<1;
@@ -314,7 +315,7 @@ void update_LED(boolean special)
   }
   else
   {
-    Serial.write(hall(1,1,1));
+    //Serial.write(hall(1,1,1));
     mesh_top=((led_G[led_data[0]]&B10101010)>>1)|((led_R[led_data[0]]&B01010101))<<1;
     mesh_bot=(led_G[led_data[0]]&B01010101)|(led_R[led_data[0]]&B10101010);
   
@@ -373,6 +374,7 @@ void shiftout(int Output,int Clock,byte topB,byte botB)
     //digitalWrite(Clock,HIGH);
     PORTB &= !B00000010;
     //digitalWrite(Clock,LOW);
+    PORTB |= B00000001;
   }
   //2. Byte
   for(int x=0;x<8;x++)
@@ -392,6 +394,7 @@ void shiftout(int Output,int Clock,byte topB,byte botB)
     //digitalWrite(Clock,HIGH);
     PORTB &= !B00000010;
     //digitalWrite(Clock,LOW);
+    PORTB |= B00000001;
   }
   
 }
