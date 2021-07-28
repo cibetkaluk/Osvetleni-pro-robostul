@@ -1,26 +1,35 @@
-
+//vytvoření pole pro zobrazené pixely
 ArrayList<Pixel> Pix = new ArrayList<Pixel>(); 
 
+//Definování nového objektu Pixel(class z duhé záložky) a přiřazení názvu "P" k tomuto oběku -> stejné jako "int x;"
+//pokud kdekoli v programu uvidíte P.***; tak je to berte jako "referenci" na druhou záožku "pixel"
 Pixel P;
 
+//Vytvoření datové proměné pro ukládání rozpoložení
 String [] Data;
 
+//Velikost všech polí na obrazovce
 int size=100;
 
+//Pomocné proměné
 int counter=0;
 int count=-1;
 
+//Pomocné proměné
 int prevxpos=0;
 int prevypos=0;
 
+//Flag
 boolean getpos=true;
 
 //proěné použité pro sériovou komunikaci
 byte send;
 int recieved;
 
+//Proměná k dekodování příchozí komunikace
 int hal[]=new int[3];
 
+//Dočasné testovací proměné - v dalších verzích budou odstraněny
 int sonda[]={0,3,1};
 int barva=0;
 
@@ -28,20 +37,27 @@ int barva=0;
 import processing.serial.*;
 Serial port;
 
+//---------------------------------------------------------------------
+
 void setup()
 {
+  //Vytvoření okna s velikostí 1280*720 px
   size(1280,720);
+  
   //vytvoření oběktu "port" pro komunikaci s rychlostí 115200 baudů
   port = new Serial(this,Serial.list()[0],115200);
   
+  //Načtení pozic polí
   Data=loadStrings("data/pozice.data");
   
   //test seriové komunikace
   send=send_led(7,5,3);
   //port.write(send);
   println(binary(send));
-  //vytvoření rozložení stolu
   textAlign(CENTER,CENTER);
+  
+  //vytvoření rozložení stolu pokud se v souboru nenachází údaje o pozicích 
+  //nebo tento soubor neexistuje vytvoří normální rozpoložení stolu s indexy po sloupcích
   if(Data==null)
   {
     for(int x=0;x<9;x++)
@@ -54,6 +70,7 @@ void setup()
     }
   }
   else
+  //pokud soubor existuje načte poslední uložené pozice
   {
     for(int i=0;i<Data.length;i++)
     {
@@ -67,11 +84,13 @@ void setup()
   
 }
 
+//------------------------------------------------------------------------
+
 void draw()
 {
-  //pozadí
+  //vykreslení pozadí
   background(192);
-  //vykreslení stolu
+  //vykreslení polí "Pixelů"
   for(Pixel P : Pix)
   {
     P.show();
@@ -93,20 +112,27 @@ void draw()
     println(binary(hal[2]));
     println("=================");
     
-    //pro učely testování
+    //Vyhledává změny na sondách x<1 pro jednu desku
     for(int x=0;x<1;x++)
     {
+      //y<8 - 8 portů desky 
       for(int y=0;y<8;y++)
       {
+        //pokud hallova sona na xté desce a ytém kolečku detekovala magnet
         if(hal[0]==x&&hal[1]==y&&hal[2]==1)
         {
-          
+          //==============================ZDE BUDETE MĚNIT FUNKCE STOLU=========================
+          //pro všechny pixely
           for(Pixel P : Pix)
           {
+            //zjisti který index odpovídá indexu hallové sondy
             if(P.ind==(x*6+y))
             {
+              //změň barvu pixelu (Co se renderuje na počítač
               P.changeColor();
+              //zakóduj tuto barvu pro poslání
               send=send_led(P.ind/8,P.ind%8,P.col);
+              //pošli tuto barvu do arduina
               port.write(send);
             }
           }
@@ -114,10 +140,11 @@ void draw()
       }
     }
   }
+  
 }
 
 
-//pouze tesování
+//pouze tesování------------------------------------------------
 void keyReleased()
 {
   if(key=='f'||key=='F')
@@ -143,6 +170,8 @@ void keyReleased()
   port.write(send);
 }
 
+//-------------------------------------------------------------
+//Funkce pro zapsání dat o pozicích "pixelů" do souboru
 void saveStat()
 {
   Data = new String[0];
@@ -160,6 +189,8 @@ void saveStat()
   saveStrings("data/pozice.data",Data);
 }
 
+
+//zjišťování kliknutí na pixel -- v dalším updatu budou odstraněny zakomentované funkce
 void mouseClicked()
 {
   //counter=0;
@@ -205,6 +236,8 @@ void mouseClicked()
   
   */
 }
+
+//funkce pro detekci posuvu "pixelů"
 void mouseDragged()
 {
   counter=0;
@@ -233,6 +266,8 @@ void mouseDragged()
   }
 }
 
+
+//získání pozice kliknutí pro funkci prohození "pixelů"
 void mousePressed()
 {
 
@@ -255,6 +290,7 @@ void mousePressed()
   
 }
 
+//Funkce pro položení pixelu a "upevnění" na grid
 void mouseReleased()
 {
   getpos=true;
@@ -297,7 +333,7 @@ byte send_led(int x,int y,int state)
   return byte(b);
 }
 
-//dekodování komunikace -> příjem 
+//dekodování sériové komunikace -> příjem 
 int[] recieve_hall(int b)
 {
   int[] state = new int[3];
