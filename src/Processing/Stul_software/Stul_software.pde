@@ -1,4 +1,19 @@
 
+ArrayList<Pixel> Pix = new ArrayList<Pixel>(); 
+
+Pixel P;
+
+
+int size=100;
+
+int counter=0;
+int count=-1;
+
+int prevxpos=0;
+int prevypos=0;
+
+boolean getpos=true;
+
 //proěné použité pro sériovou komunikaci
 byte send;
 int recieved;
@@ -11,6 +26,7 @@ Serial port;
 
 void setup()
 {
+  size(1280,720);
   //vytvoření oběktu "port" pro komunikaci s rychlostí 115200 baudů
   port = new Serial(this,Serial.list()[0],115200);
   
@@ -18,13 +34,26 @@ void setup()
   send=send_led(7,5,3);
   port.write(send);
   println(binary(send));
-  size(300,200);
+  textAlign(CENTER,CENTER); 
+  for(int x=0;x<9;x++)
+  {
+    for(int y=0;y<6;y++)
+    {
+      P = new Pixel(x*(size)+10,y*(size)+10,size,size,(x*6+y));
+      Pix.add(P);
+    }
+  }
+  
 }
 
 void draw()
 {
-  
-  //pokud je něco v portu přečti to
+  background(192);
+  for(Pixel P : Pix)
+  {
+    P.show();
+  }
+  //println((((mouseX-10)/(size+1)*size)+10),(mouseY-10)/size);
   if(port.available()>0)
   {
     recieved=port.read();
@@ -60,22 +89,125 @@ void keyReleased()
   port.write(send);
 }
 
+void mouseClicked()
+{
+  counter=0;
+  count=-1;
+  for(Pixel P : Pix)
+  {
+    if(P.mouseOverPix())
+    {
+      println("baf");
+      P.changeColor();
+      send=send_led(P.ind/8,P.ind%8,P.col);
+      port.write(send);
+      //Pix.add(new Pixel(P.xpos-10,P.ypos-10,20,20,color(random(255),random(255),random(255))));
+      count=counter;
+    }
+    counter++;
+  }
+  if(mouseButton == LEFT &&count!=-1)
+  {
+    //Pix.add(new Pixel(Pix.get(count).xpos-10,Pix.get(count).ypos-10,20,20,color(random(255),random(255),random(255))));
+    //Pix.add(new Pixel(Pix.get(count).xpos+10,Pix.get(count).ypos-10,20,20,color(random(255),random(255),random(255))));
+    //Pix.add(new Pixel(Pix.get(count).xpos-10,Pix.get(count).ypos+10,20,20,color(random(255),random(255),random(255))));
+    //Pix.add(new Pixel(Pix.get(count).xpos+10,Pix.get(count).ypos+10,20,20,color(random(255),random(255),random(255))));
+    //Pix.remove(count);
+  }
+  
+  if(mouseButton == CENTER &&count!=-1)
+  {
+    Pix.remove(count);
+  }
+  
+  //if(mouseButton == RIGHT)
+  //{
+  //  Pix.add(new Pixel(mouseX-10,mouseY-10,20,(mouseX+10)/10,color(random(255),random(255),random(255))));
+  //}
+}
+void mouseDragged()
+{
+  counter=0;
+  count=-1;
+  for(Pixel P : Pix)
+  {
+    if(P.mouseOverPix())
+    {
+      //println("baf");
+      //P.changeColor(color(random(255),random(255),random(255)));
+      //Pix.add(new Pixel(P.xpos-10,P.ypos-10,20,20,color(random(255),random(255),random(255))));
+      count=counter;
+    }
+    counter++;
+  }
+  if(mouseButton == LEFT &&count!=-1)
+  {
+    Pixel P=Pix.get(count);
+    if(count!=Pix.size())
+    {
+      Pix.remove(count);
+      Pix.add(P);
+    }
+    P.xpos=mouseX-(P.widt/2);
+    P.ypos=mouseY-(P.heig/2);
+  }
+}
+
+void mousePressed()
+{
+
+  for(Pixel P : Pix)
+  {
+    if(P.mouseOverPix())
+    {
+      //println("baf");
+      //P.changeColor(color(random(255),random(255),random(255)));
+      //Pix.add(new Pixel(P.xpos-10,P.ypos-10,20,20,color(random(255),random(255),random(255))));
+      if(getpos==true)
+      {
+        prevxpos=P.xpos;
+        prevypos=P.ypos;
+        getpos=false;
+      }
+    }
+ 
+  }
+  
+}
+
 void mouseReleased()
 {
-  if(mouseButton==LEFT)
+  getpos=true;
+  counter=0;
+  count=-1;
+  for(Pixel P : Pix)
   {
-    send=send_led(0,6,0);
+    if(P.mouseOverPix())
+    {
+      //println("baf");
+      //P.changeColor(color(random(255),random(255),random(255)));
+      //Pix.add(new Pixel(P.xpos-10,P.ypos-10,20,20,color(random(255),random(255),random(255))));
+      count=counter;
+    }
+    counter++;
   }
-  if(mouseButton==RIGHT)
+  if(count>0)
   {
-    send=send_led(0,6,1);
+    Pixel P=Pix.get(count);
+    P.xpos=(((mouseX-10)/size)*size)+10;
+    P.ypos=(((mouseY-10)/size)*size)+10;
+    println(prevxpos,prevypos);
+    for(Pixel X : Pix)
+    {
+      if(X.xpos==P.xpos&&X.ypos==P.ypos&&X!=P)
+      {
+        X.xpos=prevxpos;
+        X.ypos=prevypos;
+      }
+    }
   }
-  if(mouseButton==CENTER)
-  {
-    send=send_led(0,6,2);
-  }
-  port.write(send);
 }
+
 
 //kodování seriové komunikace -> odesílání
 byte send_led(int x,int y,int state)
