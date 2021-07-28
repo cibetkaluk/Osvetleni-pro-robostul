@@ -23,16 +23,19 @@ int count=-1;
 //Pomocné proměné
 int prevxpos=0;
 int prevypos=0;
+long time=0;
 
 //Flag
 boolean getpos=true;
 boolean mouseReleased=true;
 boolean conected=false;
+boolean CON=false;
+boolean DC=false;
 
 //proěné použité pro sériovou komunikaci
 byte send;
 int recieved;
-int wait=0;
+long wait=0;
 
 
 //Proměná k dekodování příchozí komunikace
@@ -50,7 +53,22 @@ Serial port;
 
 void waitForConn()
 {
+  wait=0;
   println("Establishing connection...");
+  println("Waiting for Serial...");
+  while(Serial.list().length==0)
+  {
+     wait++;
+     delay(1);
+  }
+  if(DC)
+  {
+    println("Stoping previous serial...");
+    port.stop();
+    delay(100);
+  }
+  port = new Serial(this,Serial.list()[0],115200);
+  println("Waiting for arduino restart...");
   while(port.read()!=255)
   {
     wait++;
@@ -59,10 +77,29 @@ void waitForConn()
   send=send_led(7,7,3);
   port.write(send);
   conected=true;
+  CON=true;
+  DC=false;
   println("Connection established after "+wait+"ms"); 
   Allpixels(0);
   send=send_led(7,0,0);
   port.write(send);
+}
+
+void ping()
+{
+    send=send_led(7,7,2);
+    port.write(send);
+    delay(100);
+    if(recieved==254)
+    {
+      CON=true;
+    }
+    else
+    {
+      CON=false;
+      DC=true;
+    }
+    recieved=255;
 }
 
 
@@ -72,7 +109,7 @@ void setup()
   size(1280,720);
   textAlign(CENTER,CENTER);
   //vytvoření oběktu "port" pro komunikaci s rychlostí 115200 baudů
-  port = new Serial(this,Serial.list()[0],115200);
+  //port = new Serial(this,Serial.list()[0],115200);
   
   //Načtení pozic polí
   Data=loadStrings("data/pozice.data");
@@ -124,13 +161,16 @@ void setup()
   Butt.add(B);
   B = new Button(1100,300,140,50,"SAVE",#323232,5);
   Butt.add(B);
+  B = new Button(1100,650,140,50,"CON",#323232,6);
+  Butt.add(B);
+  
 }
 
 //------------------------------------------------------------------------
 
 void draw()
 {
-  
+  time++;
   while(!conected)
   {
     delay(1);
@@ -144,6 +184,31 @@ void draw()
   {
     B.show();
   }
+  //indikátor připojení
+  println(time);
+  if(time==180)
+  {
+    time=0;
+    if(CON)
+    {
+      thread("ping");
+    }
+    else
+    {
+      conected=false;
+      DC=true;
+      waitForConn();
+    }
+  }
+  if(CON)
+  {
+    fill(#329632);
+  }
+  else
+  {
+    fill(#963232);
+  }
+  ellipse(1120,675,30,30);
   
   textSize(40);
   fill(#329632);
@@ -183,8 +248,6 @@ void draw()
   }
   //println((((mouseX-10)/(size+1)*size)+10),(mouseY-10)/size);
   
-  
-  
   //pokud arduino zjistilo změnu na hall sondě ulož ji
   if(port.available()>0)
   {
@@ -198,8 +261,12 @@ void draw()
     //println(binary(hal[1]));
     //println(hal[2]);
     //println(binary(hal[2]));
-    println("=================");
-    println("hall("+hal[0]+","+hal[1]+","+hal[2]+",)");
+    if(recieved!=254)
+    {
+      println("=================");
+      println("hall("+hal[0]+","+hal[1]+","+hal[2]+",)");
+    }
+   
     //println("++++++++");
     
     //Vyhledává změny na sondách x<7 pro sedm desek
@@ -332,6 +399,11 @@ void mouseClicked()
         case 5:
           println("Saved");
           saveStat();
+        break;
+        case 6:
+          conected=false;
+          DC=true;
+          waitForConn();
         break;
       }
     }

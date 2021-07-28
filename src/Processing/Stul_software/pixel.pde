@@ -45,6 +45,25 @@ class Pixel
     }
     
   }
-   
+  
+  void setColor(String S)
+  {
+    if(S=="RED"||S=="Red"||S=="red")
+    {
+      col=2;
+    }
+    else if(S=="GREEN"||S=="Green"||S=="green")
+    {
+      col=1;
+    }
+    else if (S=="YELLOW"||S=="Yellow"||S=="yellow")
+    {
+      col=3;
+    }
+    else if(S=="OFF"||S=="Off"||S=="off")
+    {
+      col=0;
+    }
+  }
    
 }
