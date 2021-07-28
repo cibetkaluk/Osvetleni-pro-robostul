@@ -1,9 +1,10 @@
-//vytvoření pole pro zobrazené pixely
+//vytvoření pole pro zobrazené pixely a čudlíky
 ArrayList<Pixel> Pix = new ArrayList<Pixel>(); 
-
+ArrayList<Button> Butt = new ArrayList<Button>();
 //Definování nového objektu Pixel(class z duhé záložky) a přiřazení názvu "P" k tomuto oběku -> stejné jako "int x;"
 //pokud kdekoli v programu uvidíte P.***; tak je to berte jako "referenci" na druhou záožku "pixel"
 Pixel P;
+Button B;
 
 //Vytvoření datové proměné pro ukládání rozpoložení
 String [] Data;
@@ -21,6 +22,7 @@ int prevypos=0;
 
 //Flag
 boolean getpos=true;
+boolean mouseReleased=true;
 
 //proěné použité pro sériovou komunikaci
 byte send;
@@ -80,6 +82,8 @@ void setup()
       Pix.add(P);
     }
   }
+  //B = new Button(
+  //Butt.add
   
   
 }
@@ -141,7 +145,11 @@ void draw()
     }
   }
   
+  //println(mouseX,mouseY);
+
 }
+//DRAW END
+
 
 
 //pouze tesování------------------------------------------------
@@ -236,35 +244,51 @@ void mouseClicked()
   
   */
 }
+//===============================================================
 
 //funkce pro detekci posuvu "pixelů"
 void mouseDragged()
 {
-  counter=0;
-  count=-1;
-  for(Pixel P : Pix)
+  if(mouseReleased)
   {
-    if(P.mouseOverPix())
+    counter=0;
+    count=-1;
+    for(Pixel P : Pix)
     {
-      //println("baf");
-      //P.changeColor(color(random(255),random(255),random(255)));
-      //Pix.add(new Pixel(P.xpos-10,P.ypos-10,20,20,color(random(255),random(255),random(255))));
-      count=counter;
+      if(P.mouseOverPix())
+      {
+        //println("baf");
+        //P.changeColor(color(random(255),random(255),random(255)));
+        //Pix.add(new Pixel(P.xpos-10,P.ypos-10,20,20,color(random(255),random(255),random(255))));
+        count=counter;
+      }
+      counter++;
     }
-    counter++;
   }
+  
+  //println("+++++++++");
+  //println(count);
+  mouseReleased=false;
+  
+  //pokud byl nalezen pixel na který se kliklo levým tlačítkem
   if(mouseButton == LEFT &&count!=-1)
   {
+    //uloží se data toho pixelu
     Pixel P=Pix.get(count);
-    if(count!=Pix.size())
+    //zjistí se jesli je poslední v poli
+    if(count!=Pix.size()-1)
     {
+      //pokud není tak jej smažeme a přidáme na KONEC pole, aby se renderoval před ostatnímy
       Pix.remove(count);
       Pix.add(P);
     }
+    count=Pix.size()-1;
     P.xpos=mouseX-(P.widt/2);
     P.ypos=mouseY-(P.heig/2);
   }
 }
+
+//===============================================================================
 
 
 //získání pozice kliknutí pro funkci prohození "pixelů"
@@ -290,9 +314,12 @@ void mousePressed()
   
 }
 
+//==========================================================
+
 //Funkce pro položení pixelu a "upevnění" na grid
 void mouseReleased()
 {
+  mouseReleased=true;
   getpos=true;
   counter=0;
   count=-1;
@@ -310,8 +337,16 @@ void mouseReleased()
   if(count>0)
   {
     Pixel P=Pix.get(count);
-    P.xpos=(((mouseX-10)/size)*size)+10;
-    P.ypos=(((mouseY-10)/size)*size)+10;
+    if(mouseX>10&&mouseX<910&&mouseY>10&&mouseY<610)
+    {
+      P.xpos=(((mouseX-10)/size)*size)+10;
+      P.ypos=(((mouseY-10)/size)*size)+10;
+    }
+    else
+    {
+      P.xpos=prevxpos;
+      P.ypos=prevypos;
+    }
     println(prevxpos,prevypos);
     for(Pixel X : Pix)
     {
@@ -324,6 +359,7 @@ void mouseReleased()
   }
 }
 
+//=======================================================
 
 //kodování seriové komunikace -> odesílání
 byte send_led(int x,int y,int state)

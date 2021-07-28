@@ -29,6 +29,7 @@ class Pixel
     fill(colors[col]);
     rect(xpos,ypos,widt,heig);
     fill(255);
+    textSize(14);
     text("("+ind/8+","+ind%8+")",xpos+(widt/2),ypos+10);
   }
   
