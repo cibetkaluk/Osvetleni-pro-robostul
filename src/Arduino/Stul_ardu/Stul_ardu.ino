@@ -31,17 +31,17 @@ void setup()
   //Serial.write(vystup);
   
   hall_status();
-  Serial.println(hall_stat[0],DEC);
+  //Serial.println(hall_stat[0],DEC);
   
 }
 
 void loop()
 {
-  if(Serial.available())
-  {
-    Serial.read();
-    Serial.print(vystup,BIN);
-  }
+//  if(Serial.available())
+//  {
+//    Serial.read();
+//    Serial.print(vystup,BIN);
+//  }
   hall_status();
   for(int i=0;i<pocet_desek;i++)
   { 
@@ -54,6 +54,13 @@ void loop()
       {
         hall_state=1;
       }
+      else
+      {
+        hall_state=0;
+      }
+
+      //izolace pouze změněné sondy
+      hall_stat[i]=hall_stat[i]^prev_hall_stat[i];
       
       //zjištování která sonda se zmenila na x-té desce (Y souradnice pro odeslání)
       for(int y=0;y<8;y++)
@@ -65,11 +72,11 @@ void loop()
         }
       }
       Serial.write(hall(hall_x,hall_y,hall_state));
-      prev_hall_stat[i]=hall_stat[i];
+      prev_hall_stat[i]=prev_hall_stat[i]^hall_stat[i];
     }
-    Serial.println(hall_stat[i],BIN);
+    //Serial.println(hall_stat[i],BIN);
   }
-  Serial.println("========");
+  //Serial.println("========");
   delay(1000);
 }
 
