@@ -1,10 +1,13 @@
 //vytvoření pole pro zobrazené pixely a čudlíky
 ArrayList<Pixel> Pix = new ArrayList<Pixel>(); 
 ArrayList<Button> Butt = new ArrayList<Button>();
+ArrayList<Button> Butt1 = new ArrayList<Button>();
+ArrayList<Button> Mbutt = new ArrayList<Button>();
 //Definování nového objektu Pixel(class z duhé záložky) a přiřazení názvu "P" k tomuto oběku -> stejné jako "int x;"
 //pokud kdekoli v programu uvidíte P.***; tak je to berte jako "referenci" na druhou záožku "pixel"
 Pixel P;
 Button B;
+Button M;
 
 //Vytvoření datové proměné pro ukládání rozpoložení
 String [] Data;
@@ -24,6 +27,13 @@ int count=-1;
 int prevxpos=0;
 int prevypos=0;
 long time=0;
+int screen=0;
+int score=50;
+
+
+int BARVA_Z=0;
+int BARVA_SCORE=0;
+int BARVA_INIT=0;
 
 //Flag
 boolean getpos=true;
@@ -31,6 +41,7 @@ boolean mouseReleased=true;
 boolean conected=false;
 boolean CON=false;
 boolean DC=false;
+boolean menu=false;
 
 //proěné použité pro sériovou komunikaci
 byte send;
@@ -49,7 +60,20 @@ int barva=0;
 import processing.serial.*;
 Serial port;
 
-//---------------------------------------------------------------------
+//=====================================================================
+int ScoreF()
+{
+  int s=0;
+  for(Pixel P : Pix)
+  {
+     if(P.col==BARVA_SCORE)
+     {
+       s++;
+     }
+  }
+  return s;
+}
+//=====================================================================
 
 void waitForConn()
 {
@@ -119,7 +143,7 @@ void setup()
   background(192);
   fill(32);
   textSize(50);
-  text("Navazuji sojení s Arduinem...",width/2,height/2);
+  text("Navazuji spojení s Arduinem...",width/2,height/2);
   thread("waitForConn");
   //send=send_led(7,5,3);
   //port.write(send);
@@ -149,6 +173,7 @@ void setup()
       Pix.add(P);
     }
   }
+  
   B = new Button(950,20,290,50,"OFF",#323232,0);
   Butt.add(B);
   B = new Button(950,90,290,50,"GREEN",#329632,1);
@@ -163,6 +188,28 @@ void setup()
   Butt.add(B);
   B = new Button(1100,650,140,50,"CON",#323232,6);
   Butt.add(B);
+  B = new Button(950,650,140,50,"MENU",#323232,7);
+  Butt.add(B);
+  
+  B = new Button(950,650,140,50,"MENU",#323232,0);
+  Butt1.add(B);
+  B = new Button(1100,650,140,50,"CON",#323232,1);
+  Butt1.add(B);
+  B = new Button(950,20,290,50,"POČÁTEČNÍ",#323232,2);
+  Butt1.add(B);
+  B = new Button(950,90,290,50,"ZMĚNIT NA",#323232,3);
+  Butt1.add(B);
+  B = new Button(950,160,290,50,"SCORE",#323232,4);
+  Butt1.add(B);
+  B = new Button(1023,230,145,50,"RESET",#323232,5);
+  Butt1.add(B);
+  
+  M = new Button(width/2-70,350,140,50,"EXIT",#323232,0);
+  Mbutt.add(M);
+  M = new Button(width/2-70,280,140,50,"DEBUG",#323232,1);
+  Mbutt.add(M);
+  M = new Button(width/2-70,210,140,50,"SCORE",#323232,2);
+  Mbutt.add(M);
   
 }
 
@@ -176,16 +223,79 @@ void draw()
     delay(1);
   }
   
-  
+  score=ScoreF();
   //vykreslení pozadí
   background(192);
-  //vykreslování čudlíků 
-  for(Button B : Butt)
+  
+  //switch obrazovek
+  switch(screen)
   {
-    B.show();
-  }
+    case 0:
+      //vykreslování čudlíků 
+      for(Button B : Butt)
+      {
+        B.show();
+      }
+      
+      //text dole počet barevných polí
+      textSize(40);
+      fill(#329632);
+      text("G:"+G,110,650);
+      fill(#963232);
+      text("R:"+R,310,650);
+      fill(#969632);
+      text("Y:"+Y,510,650);
+      fill(#323232);
+      text("Off:"+Off,710,650);
+      
+      //score text
+      text("score:",1100,400);
+      textSize(200);
+      text(score,1100,500);
+      
+      Off=0;
+      G=0;
+      R=0;
+      Y=0;
+      
+      //vykreslení polí "Pixelů"
+      for(Pixel P : Pix)
+      {
+        //zjišťování počtů barevných polí
+        switch(P.col)
+        {
+          case 0:
+            Off++;
+          break;
+          case 1:
+            G++;
+          break;
+          case 2:
+            R++;
+          break;
+          case 3:
+            Y++;
+          break;
+        }
+        P.show();
+      }
+    break;
+    case 1:
+      //vykreslování čudlíků 
+      for(Button B : Butt1)
+      {
+        B.show();
+      }
+      //score text
+      //text("score:",1100,400);
+      textSize(500);
+      fill(#323232);
+      text(score,width/2-200,height/2-75);
+    break;
+  } 
+  
   //indikátor připojení
-  println(time);
+  //println(time);
   if(time==180)
   {
     time=0;
@@ -209,44 +319,18 @@ void draw()
     fill(#963232);
   }
   ellipse(1120,675,30,30);
-  
-  textSize(40);
-  fill(#329632);
-  text("G:"+G,110,650);
-  fill(#963232);
-  text("R:"+R,310,650);
-  fill(#969632);
-  text("Y:"+Y,510,650);
-  fill(#323232);
-  text("Off:"+Off,710,650);
-  
-  Off=0;
-  G=0;
-  R=0;
-  Y=0;
-  
-  //vykreslení polí "Pixelů"
-  for(Pixel P : Pix)
-  {
-    //zjišťování počtů barevných polí
-    switch(P.col)
-    {
-      case 0:
-        Off++;
-      break;
-      case 1:
-        G++;
-      break;
-      case 2:
-        R++;
-      break;
-      case 3:
-        Y++;
-      break;
-    }
-    P.show();
-  }
+    
   //println((((mouseX-10)/(size+1)*size)+10),(mouseY-10)/size);
+  //menu - tmavší pozadí
+  if(menu)
+  {
+    fill(0,192);
+    rect(0,0,width,height);
+    for(Button M : Mbutt)
+    {
+      M.show();
+    }
+  }
   
   //pokud arduino zjistilo změnu na hall sondě ulož ji
   if(port.available()>0)
@@ -286,8 +370,8 @@ void draw()
             //zjisti který index odpovídá indexu hallové sondy
             if(P.ind==(x*8+y))
             {
-              //změň barvu pixelu (Co se renderuje na počítač
-              P.changeColor();
+              //změň barvu pixelu (Co se renderuje na počítač)
+              P.setColor(BARVA_Z);
               //zakóduj tuto barvu pro poslání
               send=send_led(P.ind/8,P.ind%8,P.col);
               //pošli tuto barvu do arduina
@@ -362,72 +446,139 @@ void mouseClicked()
   //counter=0;
   //count=-1;
   
-  for(Button B : Butt)
+  if(!menu&&screen==0)
   {
-    if(B.mouseOnButton())
+    
+    for(Button B : Butt)
     {
-      switch(B.index)
+      if(B.mouseOnButton())
       {
-        case 0:
-          println("Off");
-          Allpixels(0);
-          send=send_led(7,0,0);
-          port.write(send);
-        break;
-        case 1:
-          println("Green");
-          Allpixels(1);
-          send=send_led(7,0,1);
-          port.write(send);
-        break;
-        case 2:
-          println("Red");
-          Allpixels(2);
-          send=send_led(7,0,2);
-          port.write(send);
-        break;
-        case 3:
-          println("Yellow");
-          Allpixels(3);
-          send=send_led(7,0,3);
-          port.write(send);
-        break;
-        case 4:
-          println("Reset");
-          Reset();
-        break;
-        case 5:
-          println("Saved");
-          saveStat();
-        break;
-        case 6:
-          conected=false;
-          DC=true;
-          waitForConn();
-        break;
+        switch(B.index)
+        {
+          case 0:
+            println("Off");
+            Allpixels(0);
+            send=send_led(7,0,0);
+            port.write(send);
+          break;
+          case 1:
+            println("Green");
+            Allpixels(1);
+            send=send_led(7,0,1);
+            port.write(send);
+          break;
+          case 2:
+            println("Red");
+            Allpixels(2);
+            send=send_led(7,0,2);
+            port.write(send);
+          break;
+          case 3:
+            println("Yellow");
+            Allpixels(3);
+            send=send_led(7,0,3);
+            port.write(send);
+          break;
+          case 4:
+            println("Reset");
+            Reset();
+          break;
+          case 5:
+            println("Saved");
+            saveStat();
+          break;
+          case 6:
+            conected=false;
+            DC=true;
+            waitForConn();
+          break;
+          case 7:
+            menu=true;
+          break;
+        }
+      }
+    }
+  
+  
+    //pro všechny pole(pixely)
+    for(Pixel P : Pix)
+    {
+      
+      if(P.mouseOverPix())
+      {
+        println("Sending");
+        P.changeColor();
+        send=send_led(P.ind/8,P.ind%8,P.col);
+        port.write(send);
+        println("("+P.ind/8+","+P.ind%8+")",P.col);
+        println("==========");
+        //Pix.add(new Pixel(P.xpos-10,P.ypos-10,20,20,color(random(255),random(255),random(255))));
+        //count=counter;
+      }
+      //counter++;
+    }
+  }
+  
+  if(!menu&&screen==1)
+  {
+    for(Button B : Butt1)
+    {
+      if(B.mouseOnButton())
+      {
+        switch(B.index)
+        {
+          case 0:
+            menu=true;
+          break;
+          case 1:
+            conected=false;
+            DC=true;
+            waitForConn();
+          break;
+          case 2:
+            B.changeCol();
+            BARVA_INIT=B.Barva;
+          break;
+          case 3:
+            B.changeCol();
+            BARVA_Z=B.Barva;
+          break;
+          case 4:
+            B.changeCol();
+            BARVA_SCORE=B.Barva;
+          break;
+          case 5:
+            Allpixels(BARVA_INIT);
+          break;
+        }
       }
     }
   }
   
-  
-  //pro všechny pole(pixely)
-  for(Pixel P : Pix)
+  //pokud menu zapni čudlíky na menu
+  if(menu)
   {
-    
-    if(P.mouseOverPix())
+    for(Button M : Mbutt)
     {
-      println("Sending");
-      P.changeColor();
-      send=send_led(P.ind/8,P.ind%8,P.col);
-      port.write(send);
-      println("("+P.ind/8+","+P.ind%8+")",P.col);
-      println("==========");
-      //Pix.add(new Pixel(P.xpos-10,P.ypos-10,20,20,color(random(255),random(255),random(255))));
-      //count=counter;
+      if(M.mouseOnButton())
+      {
+        switch(M.index)
+        {
+          case 0:
+            menu=false;
+          break;
+          case 1:
+            menu=false;
+            screen=0;
+          break;
+          case 2:
+            menu=false;
+            screen=1;
+          break;
+        }
+      }
     }
-    //counter++;
   }
-  
   /*
   
   if(mouseButton == LEFT &&count!=-1)

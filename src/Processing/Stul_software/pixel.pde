@@ -45,7 +45,11 @@ class Pixel
     }
     
   }
-  
+  void setColor(int c)
+  {
+     col=c; 
+  }
+  /*
   void setColor(String S)
   {
     if(S=="RED"||S=="Red"||S=="red")
@@ -65,5 +69,6 @@ class Pixel
       col=0;
     }
   }
+  */
    
 }
