@@ -12,6 +12,10 @@ String [] Data;
 //Velikost všech polí na obrazovce
 int size=100;
 
+//proměné počtu barevných polí
+int G,R,Y,Off;
+
+
 //Pomocné proměné
 int counter=0;
 int count=-1;
@@ -82,10 +86,18 @@ void setup()
       Pix.add(P);
     }
   }
-  //B = new Button(
-  //Butt.add
-  
-  
+  B = new Button(950,20,290,50,"OFF",#323232,0);
+  Butt.add(B);
+  B = new Button(950,90,290,50,"GREEN",#329632,1);
+  Butt.add(B);
+  B = new Button(950,160,290,50,"RED",#963232,2);
+  Butt.add(B);
+  B = new Button(950,230,290,50,"YELLOW",#969632,3);
+  Butt.add(B);
+  B = new Button(950,300,140,50,"RESET",#323232,4);
+  Butt.add(B);
+  B = new Button(1100,300,140,50,"SAVE",#323232,5);
+  Butt.add(B);
 }
 
 //------------------------------------------------------------------------
@@ -94,12 +106,51 @@ void draw()
 {
   //vykreslení pozadí
   background(192);
+  //vykreslování čudlíků 
+  for(Button B : Butt)
+  {
+    B.show();
+  }
+  
+  textSize(40);
+  fill(#329632);
+  text("G:"+G,110,650);
+  fill(#963232);
+  text("R:"+R,310,650);
+  fill(#969632);
+  text("Y:"+Y,510,650);
+  fill(#323232);
+  text("Off:"+Off,710,650);
+  
+  Off=0;
+  G=0;
+  R=0;
+  Y=0;
+  
   //vykreslení polí "Pixelů"
   for(Pixel P : Pix)
   {
+    //zjišťování počtů barevných polí
+    switch(P.col)
+    {
+      case 0:
+        Off++;
+      break;
+      case 1:
+        G++;
+      break;
+      case 2:
+        R++;
+      break;
+      case 3:
+        Y++;
+      break;
+    }
     P.show();
   }
   //println((((mouseX-10)/(size+1)*size)+10),(mouseY-10)/size);
+  
+  
   
   //pokud arduino zjistilo změnu na hall sondě ulož ji
   if(port.available()>0)
@@ -158,24 +209,28 @@ void keyReleased()
   if(key=='f'||key=='F')
   {
     send=send_led(0,6,0);
+    port.write(send);
   }
   if(key=='g'||key=='G')
   {
     send=send_led(0,6,1);
+    port.write(send);
   }
   if(key=='r'||key=='R')
   {
     send=send_led(0,6,2);
+    port.write(send);
   }
   if(key=='b'||key=='B')
   {
     send=send_led(0,6,3);
+    port.write(send);
   }
   if(key=='S')
   {
+    println("Saved");
     saveStat();
   }
-  port.write(send);
 }
 
 //-------------------------------------------------------------
@@ -203,6 +258,40 @@ void mouseClicked()
 {
   //counter=0;
   //count=-1;
+  
+  for(Button B : Butt)
+  {
+    if(B.mouseOnButton())
+    {
+      switch(B.index)
+      {
+        case 0:
+          println("Off");
+          Allpixels(0);
+        break;
+        case 1:
+          println("Green");
+          Allpixels(1);
+        break;
+        case 2:
+          println("Red");
+          Allpixels(2);
+        break;
+        case 3:
+          println("Yellow");
+          Allpixels(3);
+        break;
+        case 4:
+          println("Reset");
+          Reset();
+        break;
+        case 5:
+          println("Saved");
+          saveStat();
+        break;
+      }
+    }
+  }
   
   
   //pro všechny pole(pixely)
@@ -360,6 +449,43 @@ void mouseReleased()
 }
 
 //=======================================================
+
+
+//adresování všech pixelů barvu
+void Allpixels(int col)
+{
+  for(Pixel P : Pix)
+  {
+    P.col=col;
+  }
+}
+
+void Reset()
+{
+  Pix.clear();
+  if(Data==null)
+  {
+    for(int x=0;x<9;x++)
+    {
+      for(int y=0;y<6;y++)
+      {
+        P = new Pixel(x*(size)+10,y*(size)+10,size,size,(x*6+y));
+        Pix.add(P);
+      }
+    }
+  }
+  else
+  //pokud soubor existuje načte poslední uložené pozice
+  {
+    for(int i=0;i<Data.length;i++)
+    {
+      String s = Data[i];
+      String [] temp = split(s,';');
+      P = new Pixel(int(temp[0]),int(temp[1]),size,size,int(temp[2]));
+      Pix.add(P);
+    }
+  }
+}
 
 //kodování seriové komunikace -> odesílání
 byte send_led(int x,int y,int state)
