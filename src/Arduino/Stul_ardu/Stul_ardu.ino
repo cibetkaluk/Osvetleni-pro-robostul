@@ -200,6 +200,13 @@ void loop()
           update_LED(1);
           
         }
+        if(led_data[1]==7)
+        {
+          if(led_data[2]==2)
+          {
+            Serial.write(hall(7,7,2));
+          }
+        }
       }
       
     }
