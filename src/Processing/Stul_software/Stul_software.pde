@@ -27,10 +27,13 @@ int prevypos=0;
 //Flag
 boolean getpos=true;
 boolean mouseReleased=true;
+boolean conected=false;
 
 //proěné použité pro sériovou komunikaci
 byte send;
 int recieved;
+int wait=0;
+
 
 //Proměná k dekodování příchozí komunikace
 int hal[]=new int[3];
@@ -45,22 +48,45 @@ Serial port;
 
 //---------------------------------------------------------------------
 
+void waitForConn()
+{
+  println("Establishing connection...");
+  while(port.read()!=255)
+  {
+    wait++;
+    delay(1);
+  }
+  send=send_led(7,7,3);
+  port.write(send);
+  conected=true;
+  println("Connection established after "+wait+"ms"); 
+  Allpixels(0);
+  send=send_led(7,0,0);
+  port.write(send);
+}
+
+
 void setup()
 {
-  //Vytvoření okna s velikostí 1280*720 px
+  //Vytvoření okna s velikostí 1280*720 px a centrování všech textů na střed
   size(1280,720);
-  
+  textAlign(CENTER,CENTER);
   //vytvoření oběktu "port" pro komunikaci s rychlostí 115200 baudů
   port = new Serial(this,Serial.list()[0],115200);
   
   //Načtení pozic polí
   Data=loadStrings("data/pozice.data");
   
-  //test seriové komunikace
-  send=send_led(7,5,3);
+  //navazování spojení seriové komunikace
+  
+  background(192);
+  fill(32);
+  textSize(50);
+  text("Navazuji sojení s Arduinem...",width/2,height/2);
+  thread("waitForConn");
+  //send=send_led(7,5,3);
   //port.write(send);
-  println(binary(send));
-  textAlign(CENTER,CENTER);
+  //println(binary(send));
   
   //vytvoření rozložení stolu pokud se v souboru nenachází údaje o pozicích 
   //nebo tento soubor neexistuje vytvoří normální rozpoložení stolu s indexy po sloupcích
@@ -104,6 +130,13 @@ void setup()
 
 void draw()
 {
+  
+  while(!conected)
+  {
+    delay(1);
+  }
+  
+  
   //vykreslení pozadí
   background(192);
   //vykreslování čudlíků 
@@ -159,16 +192,18 @@ void draw()
     recieved=port.read();
     //dekodování bytu
     hal=recieve_hall(recieved);
-    println(hal[0]);
-    println(binary(hal[0]));
-    println(hal[1]);
-    println(binary(hal[1]));
-    println(hal[2]);
-    println(binary(hal[2]));
+    //println(hal[0]);
+    //println(binary(hal[0]));
+    //println(hal[1]);
+    //println(binary(hal[1]));
+    //println(hal[2]);
+    //println(binary(hal[2]));
     println("=================");
+    println("hall("+hal[0]+","+hal[1]+","+hal[2]+",)");
+    //println("++++++++");
     
-    //Vyhledává změny na sondách x<1 pro jednu desku
-    for(int x=0;x<1;x++)
+    //Vyhledává změny na sondách x<7 pro sedm desek
+    for(int x=0;x<7;x++)
     {
       //y<8 - 8 portů desky 
       for(int y=0;y<8;y++)
@@ -176,12 +211,13 @@ void draw()
         //pokud hallova sona na xté desce a ytém kolečku detekovala magnet
         if(hal[0]==x&&hal[1]==y&&hal[2]==1)
         {
+          //println("hall("+hal[0]+","+hal[1]+","+hal[2]+",)");
           //==============================ZDE BUDETE MĚNIT FUNKCE STOLU=========================
           //pro všechny pixely
           for(Pixel P : Pix)
           {
             //zjisti který index odpovídá indexu hallové sondy
-            if(P.ind==(x*6+y))
+            if(P.ind==(x*8+y))
             {
               //změň barvu pixelu (Co se renderuje na počítač
               P.changeColor();
@@ -206,26 +242,26 @@ void draw()
 //pouze tesování------------------------------------------------
 void keyReleased()
 {
-  if(key=='f'||key=='F')
-  {
-    send=send_led(0,6,0);
-    port.write(send);
-  }
-  if(key=='g'||key=='G')
-  {
-    send=send_led(0,6,1);
-    port.write(send);
-  }
-  if(key=='r'||key=='R')
-  {
-    send=send_led(0,6,2);
-    port.write(send);
-  }
-  if(key=='b'||key=='B')
-  {
-    send=send_led(0,6,3);
-    port.write(send);
-  }
+  //if(key=='f'||key=='F')
+  //{
+  //  send=send_led(0,6,0);
+  //  port.write(send);
+  //}
+  //if(key=='g'||key=='G')
+  //{
+  //  send=send_led(0,6,1);
+  //  port.write(send);
+  //}
+  //if(key=='r'||key=='R')
+  //{
+  //  send=send_led(0,6,2);
+  //  port.write(send);
+  //}
+  //if(key=='b'||key=='B')
+  //{
+  //  send=send_led(0,6,3);
+  //  port.write(send);
+  //}
   if(key=='S')
   {
     println("Saved");
@@ -268,18 +304,26 @@ void mouseClicked()
         case 0:
           println("Off");
           Allpixels(0);
+          send=send_led(7,0,0);
+          port.write(send);
         break;
         case 1:
           println("Green");
           Allpixels(1);
+          send=send_led(7,0,1);
+          port.write(send);
         break;
         case 2:
           println("Red");
           Allpixels(2);
+          send=send_led(7,0,2);
+          port.write(send);
         break;
         case 3:
           println("Yellow");
           Allpixels(3);
+          send=send_led(7,0,3);
+          port.write(send);
         break;
         case 4:
           println("Reset");
@@ -304,6 +348,8 @@ void mouseClicked()
       P.changeColor();
       send=send_led(P.ind/8,P.ind%8,P.col);
       port.write(send);
+      println("("+P.ind/8+","+P.ind%8+")",P.col);
+      println("==========");
       //Pix.add(new Pixel(P.xpos-10,P.ypos-10,20,20,color(random(255),random(255),random(255))));
       //count=counter;
     }
@@ -436,7 +482,9 @@ void mouseReleased()
       P.xpos=prevxpos;
       P.ypos=prevypos;
     }
-    println(prevxpos,prevypos);
+    
+    //println(prevxpos,prevypos);
+    
     for(Pixel X : Pix)
     {
       if(X.xpos==P.xpos&&X.ypos==P.ypos&&X!=P)
@@ -462,6 +510,8 @@ void Allpixels(int col)
 
 void Reset()
 {
+  send=send_led(7,0,0);
+  port.write(send);
   Pix.clear();
   if(Data==null)
   {
