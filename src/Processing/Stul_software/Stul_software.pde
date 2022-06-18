@@ -75,6 +75,8 @@ int ScoreF()
 }
 //=====================================================================
 
+public boolean terminating = false;
+
 void waitForConn()
 {
   wait=0;
@@ -83,6 +85,11 @@ void waitForConn()
   while(Serial.list().length==0)
   {
      wait++;
+     if(terminating)
+     {
+       println("Thread exit");
+       System.exit(0);
+     }
      delay(1);
   }
   if(DC)
@@ -95,6 +102,11 @@ void waitForConn()
   println("Waiting for arduino restart...");
   while(port.read()!=255)
   {
+    if(terminating)
+    {
+      println("Thread exit");
+      System.exit(0);
+    }
     wait++;
     delay(1);
   }
@@ -124,6 +136,12 @@ void ping()
       DC=true;
     }
     recieved=255;
+}
+
+void exit(){
+  println("exiting");
+  terminating = true;
+  super.exit();
 }
 
 
