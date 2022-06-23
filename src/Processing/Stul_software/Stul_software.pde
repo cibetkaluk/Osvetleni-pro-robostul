@@ -27,7 +27,7 @@ int count=-1;
 int prevxpos=0;
 int prevypos=0;
 long time=0;
-int screen=1;
+int screen=-1;
 int score=50;
 
 
@@ -63,7 +63,7 @@ int expectedPortID = 0;
 String ComPort = "";
 
 //MsgBox pro zprávy o spojení
-public MsgBox msg = new MsgBox(10,10,width,height/4,#323232);
+MsgBox msg = new MsgBox(10,10,width,height/4,#323232);
 
 //=====================================================================
 int ScoreF()
@@ -112,24 +112,48 @@ void waitForConn()
     println(expectedPortID);
     println(Serial.list().length);
     wait = 0;
-    while(expectedPortID >=Serial.list().length){
-      if(terminating)
-      {
-        println("Thread exit");
-        System.exit(0);
+    if(expectedPortID >=Serial.list().length)
+    {
+      while(expectedPortID >=Serial.list().length){
+        if(terminating)
+        {
+          println("Thread exit");
+          System.exit(0);
+        }
+        if(wait>10000)
+        {
+          wait = 0;
+          msg.addS("Automatic conecting Failed please, check USB connection and click on button to try again.");
+          tryingToConect = false;
+          expectedPortID = 0;
+          conected = false;
+          return;
+        }
+        wait++;
+        delay(1);
       }
-      if(wait>10000)
-      {
-        wait = 0;
-        msg.addS("Automatic conecting Failed please, check USB connection and click on button to try again.");
-        tryingToConect = false;
-        expectedPortID = 0;
-        conected = false;
-        return;
+    }else
+    {
+      while(!ComPort.equals(Serial.list()[expectedPortID])){
+        if(terminating)
+        {
+          println("Thread exit");
+          System.exit(0);
+        }
+        if(wait>10000)
+        {
+          wait = 0;
+          msg.addS("Automatic conecting Failed please, check USB connection and click on button to try again.");
+          tryingToConect = false;
+          expectedPortID = 0;
+          conected = false;
+          return;
+        }
+        wait++;
+        delay(1);
       }
-      wait++;
-      delay(1);
     }
+    
     printArray(Serial.list());
     delay(100);
     msg.addS("Opening serial port" + Serial.list()[expectedPortID] + " .");
@@ -213,6 +237,7 @@ void waitForConn()
   }
   msg.clean();
   tryingToConect = false;
+  screen = 1;
 }
 
 void ping()
@@ -510,6 +535,7 @@ void draw()
   //print(time);
   if(!conected)
   {
+    screen = -1;
     wait_screen();
   }else
   {
@@ -581,136 +607,159 @@ void mouseClicked()
   //counter=0;
   //count=-1;
   
-  if(!menu&&screen==0)
+  if(!menu)
   {
-    
-    for(Button B : Butt)
+    switch(screen)
     {
-      if(B.mouseOnButton())
-      {
-        switch(B.index)
+      case 0:
+        for(Button B : Butt)
         {
-          case 0:
-            println("Off");
-            Allpixels(0);
-            send=send_led(7,0,0);
-            port.write(send);
-          break;
-          case 1:
-            println("Green");
-            Allpixels(1);
-            send=send_led(7,0,1);
-            port.write(send);
-          break;
-          case 2:
-            println("Red");
-            Allpixels(2);
-            send=send_led(7,0,2);
-            port.write(send);
-          break;
-          case 3:
-            println("Yellow");
-            Allpixels(3);
-            send=send_led(7,0,3);
-            port.write(send);
-          break;
-          case 4:
-            println("Reset");
-            Reset();
-          break;
-          case 5:
-            println("Saved");
-            saveStat();
-          break;
-          case 6:
-            if(tryingToConect)
+          if(B.mouseOnButton())
+          {
+            switch(B.index)
             {
-              print("here");
-              msg.addS("Automatic conecting didnot finsh, please wait.");
+              case 0:
+                println("Off");
+                Allpixels(0);
+                send=send_led(7,0,0);
+                port.write(send);
+              break;
+              case 1:
+                println("Green");
+                Allpixels(1);
+                send=send_led(7,0,1);
+                port.write(send);
+              break;
+              case 2:
+                println("Red");
+                Allpixels(2);
+                send=send_led(7,0,2);
+                port.write(send);
+              break;
+              case 3:
+                println("Yellow");
+                Allpixels(3);
+                send=send_led(7,0,3);
+                port.write(send);
+              break;
+              case 4:
+                println("Reset");
+                Reset();
+              break;
+              case 5:
+                println("Saved");
+                saveStat();
+              break;
+              case 6:
+                if(conected)
+                {
+                  DC=true;
+                }else
+                {
+                  DC = false;
+                }
+                conected=false;
+                thread("waitForConn");
+              break;
+              case 7:
+                menu=true;
+              break;
+              case 8:
+                println("Score Reset");
+                println(BARVA_INIT);
+                Allpixels(BARVA_INIT);
+                send=send_led(7,0,BARVA_INIT);
+                port.write(send);
+              break;
+                
+            }
+          }
+        }
+      
+      
+        //pro všechny pole(pixely)
+        for(Pixel P : Pix)
+        {
+          
+          if(P.mouseOverPix())
+          {
+            println("Sending");
+            P.changeColor();
+            send=send_led(P.ind/8,P.ind%8,P.col);
+            port.write(send);
+            println("("+P.ind/8+","+P.ind%8+")",P.col);
+            println("==========");
+            //Pix.add(new Pixel(P.xpos-10,P.ypos-10,20,20,color(random(255),random(255),random(255))));
+            //count=counter;
+          }
+          //counter++;
+        }
+      break;
+      case 1:
+        for(Button B : Butt1)
+        {
+          if(B.mouseOnButton())
+          {
+            switch(B.index)
+            {
+              case 0:
+                menu=true;
+              break;
+              case 1:
+                if(conected)
+                {
+                  DC=true;
+                }else
+                {
+                  DC = false;
+                }
+                conected=false;
+                thread("waitForConn");
+              break;
+              case 2:
+                B.changeCol();
+                BARVA_INIT=B.Barva;
+              break;
+              case 3:
+                B.changeCol();
+                BARVA_Z=B.Barva;
+              break;
+              case 4:
+                B.changeCol();
+                BARVA_SCORE=B.Barva;
+              break;
+              case 5:
+                Allpixels(BARVA_INIT);
+                send=send_led(7,0,BARVA_INIT);
+                port.write(send);
+              break;
+            }
+          }
+        }
+      break;
+      default:
+        if(Butt.get(6).mouseOnButton())
+        {
+          if(tryingToConect)
+          {
+            print("here");
+            msg.addS("Automatic conecting didnot finsh, please wait.");
+          }else
+          {
+            if(conected)
+            {
+              DC=true;
             }else
             {
-              if(conected)
-              {
-                DC=true;
-              }else
-              {
-                DC = false;
-              }
-              conected=false;
-              thread("waitForConn");
+              DC = false;
             }
-          break;
-          case 7:
-            menu=true;
-          break;
-          case 8:
-            println("Score Reset");
-            println(BARVA_INIT);
-            Allpixels(BARVA_INIT);
-            send=send_led(7,0,BARVA_INIT);
-            port.write(send);
-          break;
-            
-        }
-      }
-    }
-  
-  
-    //pro všechny pole(pixely)
-    for(Pixel P : Pix)
-    {
-      
-      if(P.mouseOverPix())
-      {
-        println("Sending");
-        P.changeColor();
-        send=send_led(P.ind/8,P.ind%8,P.col);
-        port.write(send);
-        println("("+P.ind/8+","+P.ind%8+")",P.col);
-        println("==========");
-        //Pix.add(new Pixel(P.xpos-10,P.ypos-10,20,20,color(random(255),random(255),random(255))));
-        //count=counter;
-      }
-      //counter++;
-    }
-  }
-  
-  if(!menu&&screen==1)
-  {
-    for(Button B : Butt1)
-    {
-      if(B.mouseOnButton())
-      {
-        switch(B.index)
-        {
-          case 0:
-            menu=true;
-          break;
-          case 1:
             conected=false;
-            DC=true;
             thread("waitForConn");
-          break;
-          case 2:
-            B.changeCol();
-            BARVA_INIT=B.Barva;
-          break;
-          case 3:
-            B.changeCol();
-            BARVA_Z=B.Barva;
-          break;
-          case 4:
-            B.changeCol();
-            BARVA_SCORE=B.Barva;
-          break;
-          case 5:
-            Allpixels(BARVA_INIT);
-            send=send_led(7,0,BARVA_INIT);
-            port.write(send);
-          break;
+          }
         }
-      }
+      break;
     }
+    
   }
   
   //pokud menu zapni čudlíky na menu
