@@ -27,7 +27,7 @@ int count=-1;
 int prevxpos=0;
 int prevypos=0;
 long time=0;
-int screen=0;
+int screen=1;
 int score=50;
 
 
@@ -59,6 +59,11 @@ int barva=0;
 //knihovna seriové komunikace pro processing
 import processing.serial.*;
 Serial port;
+int expectedPortID = 0;
+String ComPort = "";
+
+//MsgBox pro zprávy o spojení
+public MsgBox msg = new MsgBox(10,10,width,height/4,#323232);
 
 //=====================================================================
 int ScoreF()
@@ -75,13 +80,17 @@ int ScoreF()
 }
 //=====================================================================
 
-public boolean terminating = false;
+boolean terminating = false;
+boolean tryingToConect = false;
 
 void waitForConn()
 {
+  tryingToConect = true;
   wait=0;
   println("Establishing connection...");
+  msg.addS("Establishing connection...");
   println("Waiting for Serial...");
+  msg.addS("Waiting for Serial...");
   while(Serial.list().length==0)
   {
      wait++;
@@ -92,33 +101,118 @@ void waitForConn()
      }
      delay(1);
   }
+  msg.addS("Found " + Serial.list().length + " serial devices.");
+  printArray(Serial.list());
   if(DC)
   {
+    msg.addS("Trying to reconect on same port \"" + ComPort + "\"");
     println("Stoping previous serial...");
     port.stop();
-    delay(100);
-  }
-  port = new Serial(this,Serial.list()[0],115200);
-  println("Waiting for arduino restart...");
-  while(port.read()!=255)
-  {
-    if(terminating)
-    {
-      println("Thread exit");
-      System.exit(0);
+    printArray(Serial.list());
+    println(expectedPortID);
+    println(Serial.list().length);
+    wait = 0;
+    while(expectedPortID >=Serial.list().length){
+      if(terminating)
+      {
+        println("Thread exit");
+        System.exit(0);
+      }
+      if(wait>10000)
+      {
+        wait = 0;
+        msg.addS("Automatic conecting Failed please, check USB connection and click on button to try again.");
+        tryingToConect = false;
+        expectedPortID = 0;
+        conected = false;
+        return;
+      }
+      wait++;
+      delay(1);
     }
-    wait++;
-    delay(1);
+    printArray(Serial.list());
+    delay(100);
+    msg.addS("Opening serial port" + Serial.list()[expectedPortID] + " .");
+    port = new Serial(this,Serial.list()[expectedPortID],115200);
+    msg.addS("Waiting for arduino restart and handshake...");
+    while(port.read()!=255)
+    {
+      if(terminating)
+      {
+        println("Thread exit");
+        System.exit(0);
+      }
+      wait++;
+      
+      delay(1);
+    }
+    send=send_led(7,7,3);
+    port.write(send);
+    conected=true;
+    CON=true;
+    DC=false;
+    println("Connection established after "+wait+"ms"); 
+    Allpixels(0);
+    send=send_led(7,0,0);
+    port.write(send);
+  }else{
+    //Pokud je jeden nebo víc portů otevřených musí se arduino hledat
+    msg.addS("Finding correct port (this may take a while)...");
+    while(!conected){
+      msg.addS("Scaning port "+ Serial.list()[expectedPortID] + " trying next port in 5s.");
+      msg.addS("Opening serial port" + Serial.list()[expectedPortID] + " .");
+      port = new Serial(this,Serial.list()[expectedPortID],115200);
+      msg.addS("Waiting for arduino restart and handshake...");
+      boolean notfound = false;
+      while(port.read()!=255)
+      {
+        if(terminating)
+        {
+          println("Thread exit");
+          System.exit(0);
+        }
+        wait++;
+        if(wait>5000)
+        {
+          notfound = true;
+          break;
+        }
+        delay(1);
+      }
+      if(notfound)
+      {
+        wait = 0;
+        expectedPortID++;
+        msg.addS("Stoping previous serial...");
+        port.stop();
+        if(expectedPortID >= Serial.list().length)
+        {
+          msg.addS("Automatic conecting Failed please, check USB connection and click on button to try again.");
+          tryingToConect = false;
+          expectedPortID = 0;
+          conected = false;
+          return;
+        }
+        delay(100);
+      }else
+      {
+        send=send_led(7,7,3);
+        port.write(send);
+        conected=true;
+        CON=true;
+        DC=false;
+        ComPort = Serial.list()[expectedPortID];
+        println("Connection established after "+wait+"ms"); 
+        Allpixels(0);
+        send=send_led(7,0,0);
+        port.write(send);
+      }
+      
+    }
+    
   }
-  send=send_led(7,7,3);
-  port.write(send);
-  conected=true;
-  CON=true;
-  DC=false;
-  println("Connection established after "+wait+"ms"); 
-  Allpixels(0);
-  send=send_led(7,0,0);
-  port.write(send);
+  msg.clean();
+  tryingToConect = false;
 }
 
 void ping()
@@ -235,14 +329,7 @@ void setup()
 
 //------------------------------------------------------------------------
 
-void draw()
-{
-  time++;
-  while(!conected)
-  {
-    delay(1);
-  }
-  
+void Screen(){
   score=ScoreF();
   //vykreslení pozadí
   background(192);
@@ -316,8 +403,9 @@ void draw()
   
   //indikátor připojení
   //println(time);
-  if(time==180)
+  if(time>=180)
   {
+    
     time=0;
     if(CON)
     {
@@ -327,7 +415,8 @@ void draw()
     {
       conected=false;
       DC=true;
-      waitForConn();
+      thread("waitForConn");
+      //waitForConn();
     }
   }
   if(CON)
@@ -402,6 +491,32 @@ void draw()
       }
     }
   }
+}
+
+void wait_screen(){
+  background(192);
+  fill(32);
+  textSize(50);
+  text("Navazuji spojení s Arduinem...",width/2,height/2);
+  msg.render();
+  Butt.get(6).show();
+  fill(#963232);
+  ellipse(1120,675,30,30);
+}
+
+void draw()
+{
+  time++;
+  //print(time);
+  if(!conected)
+  {
+    wait_screen();
+  }else
+  {
+    Screen();
+  }
+  
+  
   
   //println(mouseX,mouseY);
 
@@ -508,9 +623,22 @@ void mouseClicked()
             saveStat();
           break;
           case 6:
-            conected=false;
-            DC=true;
-            waitForConn();
+            if(tryingToConect)
+            {
+              print("here");
+              msg.addS("Automatic conecting didnot finsh, please wait.");
+            }else
+            {
+              if(conected)
+              {
+                DC=true;
+              }else
+              {
+                DC = false;
+              }
+              conected=false;
+              thread("waitForConn");
+            }
           break;
           case 7:
             menu=true;
@@ -561,7 +689,7 @@ void mouseClicked()
           case 1:
             conected=false;
             DC=true;
-            waitForConn();
+            thread("waitForConn");
           break;
           case 2:
             B.changeCol();
